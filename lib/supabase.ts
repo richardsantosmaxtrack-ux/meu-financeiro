@@ -1,7 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
+// Troque 'transactions' pelo nome que aparecer no seu Supabase
+const { data } = await supabase.from('nome_da_sua_tabela').select('*')...
 
-// Colocando os dados direto aqui para o sistema não ter como errar
-const supabaseUrl = 'https://qggirnlpyobmhjlzucnd.supabase.co';
-const supabaseAnonKey = 'sb_publishable_1Bfpv8YWZYFtfARB6rnj2g_YqxymIkV';
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// E aqui também no salvamento:
+const { error } = await supabase.from('nome_da_sua_tabela').insert([{...

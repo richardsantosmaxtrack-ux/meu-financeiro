@@ -34,7 +34,6 @@ export default function Home() {
     if (!description || !amount) return
     setLoading(true)
 
-    // Usamos a data selecionada no formulário para o 'created_at'
     const { error } = await supabase.from('transacoes').insert([{ 
       description: description.toUpperCase(), 
       amount: parseFloat(amount), 
@@ -45,7 +44,6 @@ export default function Home() {
     if (!error) {
       setDescription(''); 
       setAmount(''); 
-      // Reseta a data para hoje após salvar (opcional, se preferir manter a data atual)
       setDate(new Date().toISOString().split('T')[0]);
       fetchTransactions();
     } else {
@@ -54,7 +52,7 @@ export default function Home() {
     setLoading(false)
   }
 
-  // FILTROS POR MÊS SELECIONADO
+  // FILTROS E CÁLCULOS
   const filtered = transactions.filter(t => new Date(t.created_at).getMonth() === selectedMonth)
   
   const totalIncomes = filtered.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0)
@@ -72,11 +70,11 @@ export default function Home() {
     <main className="min-h-screen bg-[#0a0f1e] text-white p-4 md:p-8 font-sans uppercase">
       <div className="max-w-6xl mx-auto">
         
-        {/* HEADER COM SELETOR DE MÊS PARA VISUALIZAÇÃO */}
+        {/* HEADER */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-xl font-black italic text-blue-500 tracking-tighter uppercase">MEU FINANCEIRO</h1>
           <div className="flex flex-col items-end">
-             <label className="text-[9px] text-slate-500 font-bold mb-1">VISUALIZAR MÊS:</label>
+             <label className="text-[9px] text-slate-500 font-bold mb-1 uppercase">Visualizar Mês:</label>
              <select 
                 value={selectedMonth} 
                 onChange={(e) => setSelectedMonth(parseInt(e.target.value))} 
@@ -87,36 +85,35 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 4 CARDS DE RESUMO */}
+        {/* 4 CARDS DE RESUMO COM CORES CORRIGIDAS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-[#111827] p-5 rounded-xl border border-slate-800">
-            <p className="text-[10px] text-slate-400 font-bold mb-1">Entradas</p>
+            <p className="text-[10px] text-emerald-400 font-black mb-1 uppercase tracking-widest">Entradas</p>
             <h2 className="text-xl font-black text-emerald-400">R$ {totalIncomes.toLocaleString('pt-BR')}</h2>
           </div>
           <div className="bg-[#111827] p-5 rounded-xl border border-slate-800">
-            <p className="text-[10px] text-slate-400 font-bold mb-1">Saídas</p>
+            <p className="text-[10px] text-rose-500 font-black mb-1 uppercase tracking-widest">Saídas</p>
             <h2 className="text-xl font-black text-rose-500">R$ {totalExpenses.toLocaleString('pt-BR')}</h2>
           </div>
           <div className="bg-[#111827] p-5 rounded-xl border border-slate-800">
-            <p className="text-[10px] text-slate-400 font-bold mb-1">Investimentos</p>
+            <p className="text-[10px] text-purple-500 font-black mb-1 uppercase tracking-widest">Investimentos</p>
             <h2 className="text-xl font-black text-purple-500">R$ {totalInvest.toLocaleString('pt-BR')}</h2>
           </div>
           <div className="bg-blue-600 p-5 rounded-xl shadow-lg shadow-blue-900/20">
-            <p className="text-[10px] text-blue-100 font-bold mb-1">Saldo Atual</p>
+            <p className="text-[10px] text-blue-100 font-black mb-1 uppercase tracking-widest">Saldo Atual</p>
             <h2 className="text-xl font-black text-white">R$ {saldoGeral.toLocaleString('pt-BR')}</h2>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-          {/* COLUNA ESQUERDA: FORMULÁRIO E GRÁFICO */}
+          {/* FORMULÁRIO E GRÁFICO */}
           <div className="md:col-span-5 space-y-8">
             <div className="bg-[#111827] p-6 rounded-2xl border border-slate-800">
-              <h3 className="text-[10px] font-black text-blue-500 mb-6 tracking-widest text-center">Novo Lançamento</h3>
+              <h3 className="text-[10px] font-black text-blue-500 mb-6 tracking-widest text-center uppercase">Novo Lançamento</h3>
               <form onSubmit={handleAddTransaction} className="space-y-4">
                 <input type="text" placeholder="DESCRIÇÃO" className="w-full bg-[#0a0f1e] border border-slate-700 p-4 rounded-xl text-xs outline-none focus:border-blue-500 uppercase" value={description} onChange={(e) => setDescription(e.target.value)} />
                 <input type="number" placeholder="VALOR R$" className="w-full bg-[#0a0f1e] border border-slate-700 p-4 rounded-xl text-xs outline-none focus:border-blue-500" value={amount} onChange={(e) => setAmount(e.target.value)} />
                 
-                {/* CAMPO DE DATA PARA LANÇAMENTOS ANTIGOS OU FUTUROS */}
                 <div className="flex flex-col space-y-1">
                   <label className="text-[9px] text-slate-500 font-bold ml-1 uppercase">Data do Lançamento</label>
                   <input type="date" className="w-full bg-[#0a0f1e] border border-slate-700 p-4 rounded-xl text-xs outline-none text-slate-400 focus:border-blue-500" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -152,11 +149,11 @@ export default function Home() {
             </div>
           </div>
 
-          {/* COLUNA DIREITA: HISTÓRICO */}
+          {/* HISTÓRICO */}
           <div className="md:col-span-7 bg-[#111827] p-6 rounded-2xl border border-slate-800 h-fit">
             <h3 className="text-[10px] font-black text-slate-500 mb-6 italic tracking-widest uppercase text-center">Histórico Detalhado</h3>
             <div className="space-y-2 max-h-[650px] overflow-y-auto pr-2 custom-scrollbar">
-              {filtered.length === 0 && <p className="text-center text-slate-600 py-10 text-[10px]">Nenhum dado para este mês.</p>}
+              {filtered.length === 0 && <p className="text-center text-slate-600 py-10 text-[10px] uppercase">Nenhum dado para este mês.</p>}
               {filtered.map((t) => (
                 <div key={t.id} className="flex justify-between items-center p-4 bg-[#0a0f1e]/50 rounded-xl border border-slate-800/50">
                   <div>
@@ -170,7 +167,6 @@ export default function Home() {
               ))}
             </div>
           </div>
-
         </div>
       </div>
     </main>

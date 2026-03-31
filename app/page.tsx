@@ -26,28 +26,31 @@ export default function Home() {
     if (!description || !amount) return
     setLoading(true)
 
-    // Enviamos valores simples (sem símbolos) para garantir que o banco aceite
+    // O .select() no final nos ajuda a ver o erro real do Supabase
     const { error } = await supabase.from('transactions').insert([{ 
       description: description.toUpperCase(), 
       amount: parseFloat(amount), 
       type: type, 
       created_at: new Date(date).toISOString()
-    }])
+    }]).select()
 
     if (!error) {
       setDescription(''); setAmount(''); fetchTransactions()
+      alert("Salvo com sucesso!")
     } else {
       console.error(error)
-      alert("Erro ao salvar! Tente mudar o 'Tipo' ou verifique o banco.")
+      // Esta mensagem vai dizer exatamente por que o banco recusou
+      alert(`ERRO DO BANCO: ${error.message} \nDETALHE: ${error.details || 'Verifique se a coluna aceita este nome'}`)
     }
     setLoading(false)
   }
 
-  // Filtragem e Cálculos para o Gráfico
+  // Lógica do Filtro e Soma (Gráfico)
   const filtered = transactions.filter(t => new Date(t.created_at).getMonth() === selectedMonth)
-  const totalIncomes = filtered.filter(t => t.type === 'income' || t.type === 'Entrada (+)').reduce((acc, t) => acc + t.amount, 0)
-  const totalExpenses = filtered.filter(t => t.type === 'expense' || t.type === 'Saída (-)' || t.type === '→').reduce((acc, t) => acc + t.amount, 0)
-  const totalInvestments = filtered.filter(t => t.type === 'investment' || t.type === 'Investimento (±)').reduce((acc, t) => acc + t.amount, 0)
+  
+  const totalIncomes = filtered.filter(t => ["income", "Entrada (+)", "ENTRADA"].includes(t.type)).reduce((acc, t) => acc + t.amount, 0)
+  const totalExpenses = filtered.filter(t => ["expense", "Saída (-)", "SAÍDA", "→"].includes(t.type)).reduce((acc, t) => acc + t.amount, 0)
+  const totalInvestments = filtered.filter(t => ["investment", "Investimento (±)", "INVESTIMENTO"].includes(t.type)).reduce((acc, t) => acc + t.amount, 0)
 
   return (
     <main className="min-h-screen bg-[#0a0f1e] text-white p-4 md:p-8 font-sans">
@@ -59,7 +62,6 @@ export default function Home() {
           </select>
         </div>
 
-        {/* CARDS DE RESUMO */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-[#111827] p-5 rounded-xl border border-slate-800"><p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Entradas</p><h2 className="text-xl font-black text-emerald-400">R$ {totalIncomes.toLocaleString('pt-BR')}</h2></div>
           <div className="bg-[#111827] p-5 rounded-xl border border-slate-800"><p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Saídas</p><h2 className="text-xl font-black text-rose-500">R$ {totalExpenses.toLocaleString('pt-BR')}</h2></div>
@@ -86,13 +88,12 @@ export default function Home() {
           </div>
 
           <div className="md:col-span-8 space-y-6">
-            {/* GRÁFICO REATIVADO */}
             <div className="bg-[#111827] p-6 rounded-2xl border border-slate-800">
               <h3 className="text-[10px] font-black text-slate-500 mb-8 uppercase italic tracking-widest">Fluxo {months[selectedMonth]}</h3>
               <div className="flex items-end justify-around h-32 gap-4">
                 <div className="flex flex-col items-center gap-2 w-full"><div className="bg-emerald-500 w-full rounded-t-md transition-all" style={{ height: totalIncomes > 0 ? '100%' : '4px' }}></div><span className="text-[8px] text-slate-500 font-bold uppercase">Entradas</span></div>
-                <div className="flex flex-col items-center gap-2 w-full"><div className="bg-rose-500 w-full rounded-t-md transition-all" style={{ height: totalExpenses > 0 ? (totalExpenses/(totalIncomes || totalExpenses) * 100) + '%' : '4px' }}></div><span className="text-[8px] text-slate-500 font-bold uppercase">Saídas</span></div>
-                <div className="flex flex-col items-center gap-2 w-full"><div className="bg-blue-500 w-full rounded-t-md transition-all" style={{ height: totalInvestments > 0 ? (totalInvestments/(totalIncomes || totalInvestments) * 100) + '%' : '4px' }}></div><span className="text-[8px] text-slate-500 font-bold uppercase">Invest.</span></div>
+                <div className="flex flex-col items-center gap-2 w-full"><div className="bg-rose-500 w-full rounded-t-md transition-all" style={{ height: totalExpenses > 0 ? '100%' : '4px' }}></div><span className="text-[8px] text-slate-500 font-bold uppercase">Saídas</span></div>
+                <div className="flex flex-col items-center gap-2 w-full"><div className="bg-blue-500 w-full rounded-t-md transition-all" style={{ height: totalInvestments > 0 ? '100%' : '4px' }}></div><span className="text-[8px] text-slate-500 font-bold uppercase">Invest.</span></div>
               </div>
             </div>
 
@@ -101,10 +102,10 @@ export default function Home() {
                 {filtered.map((t) => (
                   <div key={t.id} className="flex justify-between items-center p-4 bg-[#0a0f1e]/50 rounded-xl border border-slate-800/50">
                     <div>
-                      <p className="text-xs font-black uppercase text-slate-200">{t.description}</p>
+                      <p className="text-xs font-black uppercase text-slate-200 tracking-tighter">{t.description}</p>
                       <p className="text-[9px] text-slate-500 font-bold">{new Date(t.created_at).toLocaleDateString('pt-BR')}</p>
                     </div>
-                    <span className={`text-xs font-black ${t.type === 'income' || t.type === 'Entrada (+)' ? 'text-emerald-400' : t.type === 'investment' || t.type === 'Investimento (±)' ? 'text-blue-400' : 'text-rose-500'}`}>
+                    <span className={`text-xs font-black ${["income", "Entrada (+)"].includes(t.type) ? 'text-emerald-400' : ["investment", "Investimento (±)"].includes(t.type) ? 'text-blue-400' : 'text-rose-500'}`}>
                       R$ {t.amount.toLocaleString('pt-BR')}
                     </span>
                   </div>

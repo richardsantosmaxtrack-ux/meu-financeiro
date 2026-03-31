@@ -74,7 +74,7 @@ export default function Home() {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-xl font-black italic text-blue-500 tracking-tighter uppercase">MEU FINANCEIRO</h1>
           <div className="flex flex-col items-end">
-             <label className="text-[9px] text-slate-500 font-bold mb-1">VISUALIZAR MÊS:</label>
+             <label className="text-[9px] text-slate-500 font-bold mb-1 uppercase">Visualizar Mês:</label>
              <select 
                 value={selectedMonth} 
                 onChange={(e) => setSelectedMonth(parseInt(e.target.value))} 
@@ -85,45 +85,37 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 4 CARDS DE RESUMO COM CONTRASTE AJUSTADO */}
+        {/* 4 CARDS DE RESUMO COM CONTRASTE TOTAL */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-[#111827] p-5 rounded-xl border border-slate-800 shadow-lg shadow-emerald-900/5">
-            <p className="text-[10px] text-emerald-400 font-black mb-1 tracking-widest">ENTRADAS</p>
-            <h2 className="text-xl font-black text-white"> {/* ✅ VALOR EM BRANCO PARA LEITURA */}
-              R$ {totalIncomes.toLocaleString('pt-BR')}
-            </h2>
+          <div className="bg-[#111827] p-5 rounded-xl border border-slate-800 shadow-lg">
+            <p className="text-[10px] text-emerald-400 font-black mb-1 uppercase tracking-widest">Entradas</p>
+            <h2 className="text-xl font-black text-white italic">R$ {totalIncomes.toLocaleString('pt-BR')}</h2>
           </div>
-          <div className="bg-[#111827] p-5 rounded-xl border border-slate-800 shadow-lg shadow-rose-900/5">
-            <p className="text-[10px] text-rose-500 font-black mb-1 tracking-widest">SAÍDAS</p>
-            <h2 className="text-xl font-black text-white"> {/* ✅ VALOR EM BRANCO PARA LEITURA */}
-              R$ {totalExpenses.toLocaleString('pt-BR')}
-            </h2>
+          <div className="bg-[#111827] p-5 rounded-xl border border-slate-800 shadow-lg">
+            <p className="text-[10px] text-rose-500 font-black mb-1 uppercase tracking-widest">Saídas</p>
+            <h2 className="text-xl font-black text-white italic">R$ {totalExpenses.toLocaleString('pt-BR')}</h2>
           </div>
-          <div className="bg-[#111827] p-5 rounded-xl border border-slate-800 shadow-lg shadow-purple-900/5">
-            <p className="text-[10px] text-purple-400 font-black mb-1 tracking-widest">INVESTIMENTOS</p>
-            <h2 className="text-xl font-black text-white"> {/* ✅ VALOR EM BRANCO PARA LEITURA */}
-              R$ {totalInvest.toLocaleString('pt-BR')}
-            </h2>
+          <div className="bg-[#111827] p-5 rounded-xl border border-slate-800 shadow-lg">
+            <p className="text-[10px] text-purple-500 font-black mb-1 uppercase tracking-widest">Investimentos</p>
+            <h2 className="text-xl font-black text-white italic">R$ {totalInvest.toLocaleString('pt-BR')}</h2>
           </div>
-          <div className="bg-blue-600 p-5 rounded-xl shadow-xl shadow-blue-900/30">
-            <p className="text-[10px] text-blue-100 font-black mb-1 tracking-widest">SALDO ATUAL</p>
-            <h2 className="text-xl font-black text-white">
-              R$ {saldoGeral.toLocaleString('pt-BR')}
-            </h2>
+          <div className="bg-blue-600 p-5 rounded-xl shadow-xl shadow-blue-900/20">
+            <p className="text-[10px] text-blue-100 font-black mb-1 uppercase tracking-widest">Saldo Atual</p>
+            <h2 className="text-xl font-black text-white italic">R$ {saldoGeral.toLocaleString('pt-BR')}</h2>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-          {/* COLUNA ESQUERDA: FORM E GRÁFICO */}
+          {/* COLUNA ESQUERDA: FORMULÁRIO E GRÁFICO */}
           <div className="md:col-span-5 space-y-8">
             <div className="bg-[#111827] p-6 rounded-2xl border border-slate-800 shadow-2xl">
-              <h3 className="text-[10px] font-black text-blue-500 mb-6 tracking-widest text-center">NOVO LANÇAMENTO</h3>
+              <h3 className="text-[10px] font-black text-blue-500 mb-6 tracking-widest text-center uppercase">Novo Lançamento</h3>
               <form onSubmit={handleAddTransaction} className="space-y-4">
                 <input type="text" placeholder="DESCRIÇÃO" className="w-full bg-[#0a0f1e] border border-slate-700 p-4 rounded-xl text-xs outline-none focus:border-blue-500 uppercase" value={description} onChange={(e) => setDescription(e.target.value)} />
                 <input type="number" placeholder="VALOR R$" className="w-full bg-[#0a0f1e] border border-slate-700 p-4 rounded-xl text-xs outline-none focus:border-blue-500" value={amount} onChange={(e) => setAmount(e.target.value)} />
                 
                 <div className="flex flex-col space-y-1">
-                  <label className="text-[9px] text-slate-500 font-bold ml-1 uppercase">DATA DO LANÇAMENTO</label>
+                  <label className="text-[9px] text-slate-500 font-bold ml-1 uppercase">Data do Lançamento</label>
                   <input type="date" className="w-full bg-[#0a0f1e] border border-slate-700 p-4 rounded-xl text-xs outline-none text-slate-400 focus:border-blue-500" value={date} onChange={(e) => setDate(e.target.value)} />
                 </div>
 
@@ -139,14 +131,19 @@ export default function Home() {
               </form>
             </div>
 
-            {/* GRÁFICO */}
+            {/* GRÁFICO COM TOOLTIP CORRIGIDO */}
             <div className="bg-[#111827] p-6 rounded-2xl border border-slate-800 h-[320px] shadow-2xl">
-              <h3 className="text-[10px] font-black text-slate-500 mb-6 tracking-widest text-center">VISÃO MENSAL</h3>
+              <h3 className="text-[10px] font-black text-slate-500 mb-6 tracking-widest text-center uppercase">Visão Mensal</h3>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 'bold'}} />
-                  <Tooltip cursor={{fill: 'transparent'}} contentStyle={{backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '8px', fontSize: '10px'}} />
+                  <Tooltip 
+                    cursor={{fill: 'transparent'}} 
+                    contentStyle={{backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '8px', fontSize: '10px'}} 
+                    itemStyle={{ color: '#fff', fontWeight: 'bold' }} // ✅ FORÇA O TEXTO DO VALOR PARA BRANCO
+                    labelStyle={{ color: '#3b82f6', marginBottom: '4px', fontWeight: 'black' }}
+                  />
                   <Bar dataKey="valor" radius={[4, 4, 0, 0]}>
                     {chartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -159,9 +156,9 @@ export default function Home() {
 
           {/* COLUNA DIREITA: HISTÓRICO */}
           <div className="md:col-span-7 bg-[#111827] p-6 rounded-2xl border border-slate-800 shadow-2xl h-fit">
-            <h3 className="text-[10px] font-black text-slate-500 mb-6 italic tracking-widest text-center">HISTÓRICO DETALHADO</h3>
+            <h3 className="text-[10px] font-black text-slate-500 mb-6 italic tracking-widest uppercase text-center">Histórico Detalhado</h3>
             <div className="space-y-2 max-h-[650px] overflow-y-auto pr-2 custom-scrollbar">
-              {filtered.length === 0 && <p className="text-center text-slate-600 py-10 text-[10px]">NENHUM LANÇAMENTO NESTE MÊS.</p>}
+              {filtered.length === 0 && <p className="text-center text-slate-600 py-10 text-[10px] uppercase">Nenhum lançamento neste mês.</p>}
               {filtered.map((t) => (
                 <div key={t.id} className="flex justify-between items-center p-4 bg-[#0a0f1e]/50 rounded-xl border border-slate-800/50 hover:border-slate-700 transition-all">
                   <div>

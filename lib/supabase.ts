@@ -1,5 +1,6 @@
-// Troque 'transactions' pelo nome que aparecer no seu Supabase
-const { data } = await supabase.from('nome_da_sua_tabela').select('*')...
+import { createClient } from '@supabase/supabase-js'
 
-// E aqui também no salvamento:
-const { error } = await supabase.from('nome_da_sua_tabela').insert([{...
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)

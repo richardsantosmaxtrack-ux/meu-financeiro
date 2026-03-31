@@ -17,7 +17,6 @@ export default function Home() {
   useEffect(() => { fetchTransactions() }, [])
 
   async function fetchTransactions() {
-    // Conectando na tabela que confirmamos que existe
     const { data, error } = await supabase
       .from('transacoes')
       .select('*')
@@ -32,7 +31,6 @@ export default function Home() {
     if (!description || !amount) return
     setLoading(true)
 
-    // Salvando os dados nas colunas que acabamos de criar via SQL
     const { error } = await supabase.from('transacoes').insert([{ 
       description: description.toUpperCase(), 
       amount: parseFloat(amount), 

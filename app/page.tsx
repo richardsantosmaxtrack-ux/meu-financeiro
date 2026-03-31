@@ -1,192 +1,170 @@
-'use client';
+'use client'
 
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { 
-  ArrowUpCircle, 
-  ArrowDownCircle, 
-  DollarSign, 
-  Calendar, 
-  PlusCircle, 
-  TrendingUp 
-} from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
 
-export default function Dashboard() {
-  const [descricao, setDescricao] = useState('');
-  const [valor, setValor] = useState('');
-  const [tipo, setTipo] = useState('Entrada');
-  const [dataSelecao, setDataSelecao] = useState(new Date().toISOString().split('T')[0]);
-  const [transacoes, setTransacoes] = useState<any[]>([]);
-  const [mesFiltro, setMesFiltro] = useState(new Date().getMonth() + 1);
+interface Transaction {
+  id: string
+  description: string
+  amount: number
+  type: 'income' | 'expense' | 'investment'
+  category: string
+  created_at: string
+}
 
-  const carregarDados = async () => {
-    const anoAtual = 2026;
-    const inicioMes = `${anoAtual}-${String(mesFiltro).padStart(2, '0')}-01`;
-    const fimMes = `${anoAtual}-${String(mesFiltro).padStart(2, '0')}-31`;
+export default function Home() {
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [description, setDescription] = useState('')
+  const [amount, setAmount] = useState('')
+  const [type, setType] = useState<'income' | 'expense' | 'investment'>('income')
+  const [loading, setLoading] = useState(false)
 
+  useEffect(() => {
+    fetchTransactions()
+  }, [])
+
+  async function fetchTransactions() {
     const { data, error } = await supabase
-      .from('transacoes')
+      .from('transactions')
       .select('*')
-      .gte('data', inicioMes)
-      .lte('data', fimMes)
-      .order('data', { ascending: false });
+      .order('created_at', { ascending: false })
+    
+    if (data) setTransactions(data)
+  }
 
-    if (!error && data) setTransacoes(data);
-  };
+  async function handleAddTransaction(e: React.FormEvent) {
+    e.preventDefault()
+    if (!description || !amount) return
 
-  useEffect(() => { carregarDados(); }, [mesFiltro]);
+    setLoading(true)
+    const { error } = await supabase.from('transactions').insert([
+      { 
+        description, 
+        amount: parseFloat(amount), 
+        type,
+        category: 'Geral'
+      }
+    ])
 
-  const salvarLancamento = async () => {
-    if (!descricao.trim() || !valor) return alert("Preencha todos os campos!");
-    const { error } = await supabase.from('transacoes').insert([
-      { descricao: descricao.trim(), valor: parseFloat(valor), tipo, data: dataSelecao }
-    ]);
-    if (!error) { setDescricao(''); setValor(''); carregarDados(); }
-  };
+    if (!error) {
+      setDescription('')
+      setAmount('')
+      fetchTransactions()
+    }
+    setLoading(false)
+  }
 
-  const entradas = transacoes.filter(t => t.tipo === 'Entrada').reduce((acc, t) => acc + t.valor, 0);
-  const saídas = transacoes.filter(t => t.tipo === 'Saída').reduce((acc, t) => acc + t.valor, 0);
-  const saldo = entradas - saídas;
+  const totalIncomes = transactions
+    .filter(t => t.type === 'income')
+    .reduce((acc, t) => acc + t.amount, 0)
 
-  const dadosGrafico = [
-    { name: 'Entradas', total: entradas, color: '#10b981' },
-    { name: 'Saídas', total: saídas, color: '#f43f5e' }
-  ];
+  const totalExpenses = transactions
+    .filter(t => t.type === 'expense')
+    .reduce((acc, t) => acc + t.amount, 0)
+
+  const totalInvestments = transactions
+    .filter(t => t.type === 'investment')
+    .reduce((acc, t) => acc + t.amount, 0)
+
+  const totalBalance = totalIncomes - totalExpenses
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
+  }
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white p-4 md:p-8 font-sans selection:bg-blue-500/30">
-      <div className="max-w-6xl mx-auto">
-        
-        {/* Cabeçalho */}
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-6">
-          <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-blue-500 italic uppercase">
-            Meu Financeiro
-          </h1>
+    <main className="min-h-screen bg-[#0a0f1e] text-white p-4 md:p-8 font-sans">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-2xl font-black italic text-blue-500 mb-8 tracking-tighter">MEU FINANCEIRO</h1>
+
+        {/* CARDS DE RESUMO */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">Entradas</p>
+            <h2 className="text-xl font-bold text-emerald-400">{formatCurrency(totalIncomes)}</h2>
+          </div>
           
-          {/* Seletor de Mês - iOS Friendly */}
-          <div className="flex items-center gap-3 bg-slate-900 p-3 px-5 rounded-2xl border border-slate-800 w-full sm:w-auto justify-center">
-            <Calendar className="text-blue-400" size={18} />
-            <select 
-              value={mesFiltro} 
-              onChange={(e) => setMesFiltro(Number(e.target.value))}
-              className="bg-transparent text-base font-bold outline-none cursor-pointer text-white appearance-none border-none focus:ring-0"
-            >
-              {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((m, i) => (
-                <option key={i} value={i + 1} className="bg-[#0f172a] text-white">{m}</option>
-              ))}
-            </select>
+          <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">Saídas</p>
+            <h2 className="text-xl font-bold text-rose-500">{formatCurrency(totalExpenses)}</h2>
+          </div>
+
+          <div className="bg-slate-900/50 p-4 rounded-xl border border-blue-500/30">
+            <p className="text-[10px] text-blue-400 uppercase font-bold tracking-widest mb-1">Investimentos</p>
+            <h2 className="text-xl font-bold text-blue-400">{formatCurrency(totalInvestments)}</h2>
+          </div>
+
+          <div className="bg-blue-600 p-4 rounded-xl shadow-lg shadow-blue-900/20">
+            <p className="text-[10px] text-blue-100 uppercase font-bold tracking-widest mb-1">Saldo Total</p>
+            <h2 className="text-xl font-bold text-white">{formatCurrency(totalBalance)}</h2>
           </div>
         </div>
 
-        {/* Cards de Resumo */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          <div className="bg-slate-900/50 p-6 rounded-3xl border border-emerald-500/10 backdrop-blur-md">
-            <span className="text-slate-400 text-[10px] font-bold uppercase block mb-1">Entradas</span>
-            <p className="text-2xl font-black text-emerald-400">R$ {entradas.toLocaleString('pt-BR')}</p>
-          </div>
-          <div className="bg-slate-900/50 p-6 rounded-3xl border border-rose-500/10 backdrop-blur-md">
-            <span className="text-slate-400 text-[10px] font-bold uppercase block mb-1">Saídas</span>
-            <p className="text-2xl font-black text-rose-400">R$ {saídas.toLocaleString('pt-BR')}</p>
-          </div>
-          <div className="bg-blue-600 p-6 rounded-3xl shadow-xl shadow-blue-900/20 sm:col-span-2 lg:col-span-1">
-            <span className="text-blue-100 text-[10px] font-bold uppercase block mb-1">Saldo Total</span>
-            <p className="text-2xl font-black text-white">R$ {saldo.toLocaleString('pt-BR')}</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Formulário - Evita Zoom no iOS */}
-          <div className="lg:col-span-4 order-1">
-            <div className="bg-slate-900/80 p-6 rounded-3xl border border-slate-800 shadow-2xl">
-              <h2 className="text-xs font-black mb-6 text-blue-500 flex items-center gap-2 uppercase">
-                <PlusCircle size={18} /> Novo Registro
-              </h2>
-              <div className="space-y-4">
-                <input 
-                  type="text" 
-                  placeholder="Descrição" 
-                  className="w-full p-4 bg-slate-950 rounded-2xl border border-slate-800 text-base outline-none focus:border-blue-500 transition-all text-white" 
-                  value={descricao} 
-                  onChange={(e) => setDescricao(e.target.value)} 
-                />
-                <input 
-                  type="number" 
-                  inputMode="decimal"
-                  placeholder="Valor" 
-                  className="w-full p-4 bg-slate-950 rounded-2xl border border-slate-800 font-mono text-base outline-none focus:border-blue-500 text-white" 
-                  value={valor} 
-                  onChange={(e) => setValor(e.target.value)} 
-                />
-                <input 
-                  type="date" 
-                  className="w-full p-4 bg-slate-950 rounded-2xl border border-slate-800 text-base text-slate-400 outline-none focus:border-blue-500" 
-                  value={dataSelecao} 
-                  onChange={(e) => setDataSelecao(e.target.value)} 
-                />
-                <select 
-                  className="w-full p-4 bg-slate-950 rounded-2xl border border-slate-800 text-base outline-none focus:border-blue-500 appearance-none text-white" 
-                  value={tipo} 
-                  onChange={(e) => setTipo(e.target.value)}
-                >
-                  <option value="Entrada" className="bg-[#020617] text-white">Entrada (+)</option>
-                  <option value="Saída" className="bg-[#020617] text-white">Saída (-)</option>
-                </select>
-                <button 
-                  onClick={salvarLancamento} 
-                  className="w-full py-5 bg-blue-600 rounded-2xl font-black text-xs uppercase tracking-widest active:bg-blue-700 transition-all"
-                >
-                  Salvar
-                </button>
-              </div>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* FORMULÁRIO */}
+          <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800 h-fit">
+            <h3 className="text-xs font-bold uppercase text-blue-500 mb-4 flex items-center gap-2">
+              <span className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-[10px] text-white">+</span>
+              Novo Registro
+            </h3>
+            <form onSubmit={handleAddTransaction} className="space-y-4">
+              <input
+                type="text"
+                placeholder="Descrição"
+                className="w-full bg-slate-800/50 border border-slate-700 p-3 rounded-lg focus:outline-none focus:border-blue-500 transition-all text-sm"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+              <input
+                type="number"
+                placeholder="Valor R$"
+                className="w-full bg-slate-800/50 border border-slate-700 p-3 rounded-lg focus:outline-none focus:border-blue-500 transition-all text-sm"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+              <select
+                className="w-full bg-slate-800/50 border border-slate-700 p-3 rounded-lg focus:outline-none focus:border-blue-500 text-sm"
+                value={type}
+                onChange={(e) => setType(e.target.value as any)}
+              >
+                <option value="income">Entrada (+)</option>
+                <option value="expense">Saída (-)</option>
+                <option value="investment">Investimento (±)</option>
+              </select>
+              <button
+                disabled={loading}
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition-all shadow-lg shadow-blue-900/40 active:scale-95 disabled:opacity-50"
+              >
+                {loading ? 'SALVANDO...' : 'SALVAR'}
+              </button>
+            </form>
           </div>
 
-          {/* Gráfico e Lista */}
-          <div className="lg:col-span-8 space-y-8 order-2">
-            <div className="bg-slate-900/40 rounded-3xl border border-slate-800 p-6">
-              <h2 className="text-xs font-black mb-6 text-blue-500 flex items-center gap-2 uppercase">
-                <TrendingUp size={18} /> Fluxo Mensal
-              </h2>
-              <div className="w-full" style={{ height: '250px' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dadosGrafico}>
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10}} />
-                    <YAxis hide />
-                    <Tooltip 
-                      cursor={{fill: 'rgba(255,255,255,0.03)'}} 
-                      contentStyle={{backgroundColor: '#0f172a', borderRadius: '16px', border: 'none', color: '#fff'}} 
-                      itemStyle={{color: '#fff'}}
-                    />
-                    <Bar dataKey="total" radius={[12, 12, 12, 12]} barSize={60}>
-                      {dadosGrafico.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="bg-slate-900/40 rounded-3xl border border-slate-800 p-6">
-              <h2 className="text-[10px] font-black text-slate-500 mb-6 uppercase tracking-widest">Histórico</h2>
-              <div className="space-y-3 max-h-[400px] overflow-y-auto overflow-x-hidden">
-                {transacoes.map((t) => (
-                  <div key={t.id} className="flex justify-between items-center p-4 bg-slate-950/50 rounded-2xl border border-slate-900">
-                    <div className="flex flex-col max-w-[60%]">
-                      <span className="text-xs font-bold text-slate-100 truncate">{t.descricao}</span>
-                      <span className="text-[9px] text-slate-500">{new Date(t.data).toLocaleDateString('pt-BR')}</span>
-                    </div>
-                    <span className={`text-xs font-black whitespace-nowrap ${t.tipo === 'Entrada' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {t.tipo === 'Entrada' ? '+' : '-'} R$ {t.valor.toLocaleString('pt-BR')}
-                    </span>
+          {/* HISTÓRICO */}
+          <div className="md:col-span-2 bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+            <h3 className="text-xs font-bold uppercase text-slate-500 mb-4">Histórico Recentemente</h3>
+            <div className="space-y-3">
+              {transactions.map((t) => (
+                <div key={t.id} className="flex justify-between items-center p-3 bg-slate-800/30 rounded-xl border border-slate-700/50 hover:border-slate-600 transition-all">
+                  <div>
+                    <p className="text-sm font-medium">{t.description}</p>
+                    <p className="text-[10px] text-slate-500">{new Date(t.created_at).toLocaleDateString('pt-BR')}</p>
                   </div>
-                ))}
-              </div>
+                  <span className={`text-sm font-black ${
+                    t.type === 'income' ? 'text-emerald-400' : 
+                    t.type === 'investment' ? 'text-blue-400' : 'text-rose-500'
+                  }`}>
+                    {t.type === 'expense' ? '-' : t.type === 'investment' ? '±' : '+'} {formatCurrency(t.amount)}
+                  </span>
+                </div>
+              ))}
+              {transactions.length === 0 && (
+                <p className="text-center text-slate-500 text-sm py-10">Nenhum registro encontrado.</p>
+              )}
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    </main>
+  )
 }
